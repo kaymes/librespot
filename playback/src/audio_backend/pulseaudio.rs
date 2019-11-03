@@ -76,6 +76,7 @@ impl Open for PulseAudioSink {
 
 impl Sink for PulseAudioSink {
     fn start(&mut self) -> io::Result<()> {
+        let sink = CString::new("librespot_sink").unwrap();
         if self.s == null_mut() {
             self.s = call_pulseaudio(
                 |err| unsafe {
@@ -83,7 +84,7 @@ impl Sink for PulseAudioSink {
                         null(),             // Use the default server.
                         self.name.as_ptr(), // Our application's name.
                         PA_STREAM_PLAYBACK,
-                        null(),             // Use the default device.
+                        sink.as_ptr(),      // Our sink.
                         self.desc.as_ptr(), // desc of our stream.
                         &self.ss,           // Our sample format.
                         null(),             // Use default channel map
