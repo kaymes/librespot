@@ -12,6 +12,7 @@ futures = "0.1"
 linear-map = "1.2"
 protobuf = "2.8.1"
 log = "0.4"
+cached = "0.11.0"
 
 [dependencies.librespot-core]
 path = "../core"

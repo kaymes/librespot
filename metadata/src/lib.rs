@@ -10,6 +10,7 @@ extern crate librespot_core;
 extern crate librespot_protocol as protocol;
 
 pub mod cover;
+pub mod metadata_manager;
 
 use futures::future;
 use futures::Future;
@@ -72,7 +73,7 @@ impl AudioItem {
     pub fn get_audio_item(
         session: &Session,
         id: SpotifyId,
-    ) -> Box<dyn Future<Item = AudioItem, Error = MercuryError>> {
+    ) -> Box<dyn Future<Item = AudioItem, Error = MercuryError> + Send> {
         match id.audio_type {
             SpotifyAudioType::Track => Track::get_audio_item(session, id),
             SpotifyAudioType::Podcast => Episode::get_audio_item(session, id),
@@ -87,14 +88,14 @@ trait AudioFiles {
     fn get_audio_item(
         session: &Session,
         id: SpotifyId,
-    ) -> Box<dyn Future<Item = AudioItem, Error = MercuryError>>;
+    ) -> Box<dyn Future<Item = AudioItem, Error = MercuryError> + Send>;
 }
 
 impl AudioFiles for Track {
     fn get_audio_item(
         session: &Session,
         id: SpotifyId,
-    ) -> Box<dyn Future<Item = AudioItem, Error = MercuryError>> {
+    ) -> Box<dyn Future<Item = AudioItem, Error = MercuryError> + Send> {
         Box::new(Self::get(session, id).and_then(move |item| {
             Ok(AudioItem {
                 id: id,
@@ -113,7 +114,7 @@ impl AudioFiles for Episode {
     fn get_audio_item(
         session: &Session,
         id: SpotifyId,
-    ) -> Box<dyn Future<Item = AudioItem, Error = MercuryError>> {
+    ) -> Box<dyn Future<Item = AudioItem, Error = MercuryError> + Send> {
         Box::new(Self::get(session, id).and_then(move |item| {
             Ok(AudioItem {
                 id: id,
@@ -133,7 +134,10 @@ pub trait Metadata: Send + Sized + 'static {
     fn request_url(id: SpotifyId) -> String;
     fn parse(msg: &Self::Message, session: &Session) -> Self;
 
-    fn get(session: &Session, id: SpotifyId) -> Box<dyn Future<Item = Self, Error = MercuryError>> {
+    fn get(
+        session: &Session,
+        id: SpotifyId,
+    ) -> Box<dyn Future<Item = Self, Error = MercuryError> + Send> {
         let uri = Self::request_url(id);
         let request = session.mercury().get(uri);
 
